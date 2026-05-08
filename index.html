@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a2f1a">
+<title>Ernährungstagebuch</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1f0f;
+    --bg2: #162616;
+    --bg3: #1e341e;
+    --card: #1a2f1a;
+    --card2: #223322;
+    --border: #2d4a2d;
+    --accent: #7ec87e;
+    --accent2: #a8e6a8;
+    --accent3: #4a9e4a;
+    --text: #e8f4e8;
+    --text2: #a0c4a0;
+    --text3: #6a946a;
+    --red: #e07070;
+    --yellow: #d4c47a;
+    --blue: #7ab8d4;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .app-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .week-badge {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 500;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 20px; padding-bottom: 40px; animation: fadeIn 0.2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+  .section-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* INPUTS */
+  textarea, input[type="text"], input[type="number"], input[type="time"], select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  textarea:focus, input:focus, select:focus {
+    border-color: var(--accent3);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 500;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+  label:first-child { margin-top: 0; }
+
+  /* ROW INPUTS */
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* DAY SELECTOR */
+  .day-selector {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .day-btn {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .day-btn .day-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .day-btn.active {
+    background: var(--accent3);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  .day-btn.active .day-num { color: var(--bg); }
+
+  .day-btn.has-data::after {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: block;
+  }
+
+  .day-btn.active.has-data::after { background: var(--bg2); }
+
+  /* WATER TRACKER */
+  .water-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .water-btn {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+  }
+
+  .water-btn.filled {
+    background: rgba(122, 184, 212, 0.2);
+    border-color: var(--blue);
+  }
+
+  .water-total {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--blue);
+    margin-top: 10px;
+  }
+
+  .water-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* SAVE BUTTON */
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent3);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 6px;
+  }
+
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  /* SLIDER */
+  .slider-wrap {
+    margin: 6px 0 14px;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .slider-question {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+    padding-right: 10px;
+  }
+
+  .slider-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    outline: none;
+    border: none;
+    padding: 0;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 3px solid var(--bg2);
+    transition: transform 0.1s;
+  }
+
+  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.2); }
+
+  /* WEIGHT */
+  .weight-display {
+    text-align: center;
+    padding: 20px;
+  }
+
+  .weight-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 56px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .weight-unit {
+    font-size: 20px;
+    color: var(--text3);
+    margin-left: 4px;
+  }
+
+  /* BLOOD PRESSURE */
+  .bp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .bp-input-wrap {
+    text-align: center;
+  }
+
+  .bp-input-wrap input {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 14px 8px;
+  }
+
+  .bp-label-text {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 5px;
+    text-align: center;
+  }
+
+  .bp-category {
+    text-align: center;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .bp-cat-optimal { background: rgba(126,200,126,0.15); color: var(--accent); }
+  .bp-cat-normal { background: rgba(126,200,126,0.1); color: var(--accent2); }
+  .bp-cat-elevated { background: rgba(212,196,122,0.15); color: var(--yellow); }
+  .bp-cat-high { background: rgba(224,112,112,0.15); color: var(--red); }
+
+  /* HISTORY LOG */
+  .log-entry {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .log-date {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .log-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text2);
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-item:last-child { border-bottom: none; }
+  .log-item span { color: var(--text); font-weight: 500; }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent3);
+    color: var(--bg);
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* PRINT BUTTON */
+  .print-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    background: rgba(126,200,126,0.1);
+    border: 1px solid var(--accent3);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+  }
+
+  /* PRINT STYLES */
+  @media print {
+    .app-header, .tabs, .tab-btn, .btn-primary, .btn-secondary, .print-btn, .day-selector, .water-btn { display: none !important; }
+    body { background: white; color: black; }
+    .page { display: block !important; padding: 0; }
+    .card { border: 1px solid #ddd; break-inside: avoid; }
+    .section-title { color: #2d6a2d; }
+    .card-title { color: #2d6a2d; }
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* MEAL SECTION */
+  .meal-section {
+    margin-bottom: 4px;
+  }
+
+  .meal-icon {
+    font-size: 14px;
+    margin-right: 4px;
+  }
+
+  /* WEEK NAV */
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .week-nav-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .week-nav-btn:active { background: var(--card2); }
+
+  .week-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* TOGGLE */
+  .toggle-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .toggle-item {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg3);
+  }
+
+  .toggle-item.active {
+    background: rgba(126,200,126,0.15);
+    border-color: var(--accent3);
+    color: var(--accent);
+  }
+
+  /* BP HISTORY */
+  .bp-history-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--card2);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  .bp-val { font-weight: 700; font-size: 14px; }
+  .bp-sys { color: var(--red); }
+  .bp-dia { color: var(--blue); }
+  .bp-pul { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <div class="app-logo">🌿 Tagebuch</div>
+    <div class="week-badge" id="weekBadge">KW –</div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('diary')">📖 Tagebuch</button>
+    <button class="tab-btn" onclick="switchTab('water')">💧 Trinken</button>
+    <button class="tab-btn" onclick="switchTab('weekly')">⚖️ Woche</button>
+    <button class="tab-btn" onclick="switchTab('bp')">❤️ Blutdruck</button>
+    <button class="tab-btn" onclick="switchTab('history')">📊 Verlauf</button>
+  </div>
+</div>
+
+<!-- DIARY TAB -->
+<div id="page-diary" class="page active">
+  <div class="week-nav">
+    <button class="week-nav-btn" onclick="changeWeek(-1)">‹</button>
+    <div class="week-title" id="weekRangeLabel">–</div>
+    <button class="week-nav-btn" onclick="changeWeek(1)">›</button>
+  </div>
+
+  <div class="day-selector" id="daySelector"></div>
+
+  <div class="section-title" id="dayTitle">–</div>
+  <div class="section-sub" id="daySubtitle"></div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 🌅 Frühstück</div>
+    <textarea id="breakfast" placeholder="Was hast du gegessen? Menge, Zutaten..." rows="3"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> ☀️ Mittagessen</div>
+    <textarea id="lunch" placeholder="Was hast du gegessen? Menge, Zutaten..." rows="3"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 🌙 Abendessen</div>
+    <textarea id="dinner" placeholder="Was hast du gegessen? Menge, Zutaten..." rows="3"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 🍎 Snacks</div>
+    <textarea id="snacks" placeholder="Zwischenmahlzeiten, Süßigkeiten, Obst..." rows="2"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 📝 Notizen</div>
+    <textarea id="notes" placeholder="Wie hast du dich gefühlt? Besonderes erlebt?" rows="2"></textarea>
+    <div style="margin-top:10px">
+      <label>Stimmung</label>
+      <div class="toggle-group" id="moodGroup">
+        <div class="toggle-item" onclick="toggleMood(this, '😊 Gut')">😊 Gut</div>
+        <div class="toggle-item" onclick="toggleMood(this, '😐 Okay')">😐 Okay</div>
+        <div class="toggle-item" onclick="toggleMood(this, '😴 Müde')">😴 Müde</div>
+        <div class="toggle-item" onclick="toggleMood(this, '😤 Gestresst')">😤 Gestresst</div>
+        <div class="toggle-item" onclick="toggleMood(this, '🤒 Nicht gut')">🤒 Nicht gut</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="saveDiary()">💾 Tag speichern</button>
+</div>
+
+<!-- WATER TAB -->
+<div id="page-water" class="page">
+  <div class="section-title">Trinken</div>
+  <div class="section-sub" id="waterDayLabel">Heute</div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 💧 Wassergläser (250ml)</div>
+    <div class="water-grid" id="waterGrid"></div>
+    <div class="water-total" id="waterTotal">0,0 L</div>
+    <div class="water-label">von empf. 2,0 L täglich</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> ☕ Weitere Getränke</div>
+    <label>Kaffee / Tee (Tassen)</label>
+    <input type="number" id="coffee" min="0" max="20" placeholder="0" inputmode="numeric">
+    <label>Sonstige Getränke</label>
+    <textarea id="otherDrinks" placeholder="Saft, Smoothie, Limonade..." rows="2"></textarea>
+  </div>
+
+  <button class="btn-primary" onclick="saveWater()">💾 Trinken speichern</button>
+</div>
+
+<!-- WEEKLY TAB -->
+<div id="page-weekly" class="page">
+  <div class="section-title">Wochenübersicht</div>
+  <div class="section-sub">Gewicht & Wochenreflexion</div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> ⚖️ Wochengewicht</div>
+    <label>Aktuelles Gewicht (kg)</label>
+    <input type="number" id="weight" step="0.1" placeholder="70.0" inputmode="decimal" style="font-size:24px; text-align:center; font-weight:700;">
+    <div style="margin-top: 8px; text-align: center; font-size: 12px; color: var(--text3)">Bitte morgens, nüchtern messen</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 🌟 Schnellreflexion</div>
+    <div style="font-size: 12px; color: var(--text3); margin-bottom: 16px;">Bewerte dich ehrlich von 1 (gar nicht) bis 10 (vollständig)</div>
+
+    <div id="reflectionSliders"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 💭 Wochennotiz</div>
+    <textarea id="weeklyNote" placeholder="Was war diese Woche besonders? Was möchtest du nächste Woche anders machen?" rows="4"></textarea>
+  </div>
+
+  <button class="btn-primary" onclick="saveWeekly()">💾 Woche speichern</button>
+  <button class="print-btn" onclick="printReport()">🖨️ Wochenbericht drucken</button>
+</div>
+
+<!-- BLOOD PRESSURE TAB -->
+<div id="page-bp" class="page">
+  <div class="section-title">Blutdruck & Puls</div>
+  <div class="section-sub">Tägliche Messung erfassen</div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 📅 Messung</div>
+    <div class="row-2">
+      <div>
+        <label>Datum</label>
+        <input type="date" id="bpDate">
+      </div>
+      <div>
+        <label>Uhrzeit</label>
+        <input type="time" id="bpTime">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> ❤️ Werte</div>
+    <div class="bp-grid">
+      <div class="bp-input-wrap">
+        <input type="number" id="bpSys" placeholder="120" inputmode="numeric" style="color: var(--red);">
+        <div class="bp-label-text">Systolisch<br><span style="font-size:10px">(mmHg)</span></div>
+      </div>
+      <div class="bp-input-wrap">
+        <input type="number" id="bpDia" placeholder="80" inputmode="numeric" style="color: var(--blue);">
+        <div class="bp-label-text">Diastolisch<br><span style="font-size:10px">(mmHg)</span></div>
+      </div>
+      <div class="bp-input-wrap">
+        <input type="number" id="bpPulse" placeholder="70" inputmode="numeric" style="color: var(--yellow);">
+        <div class="bp-label-text">Puls<br><span style="font-size:10px">(bpm)</span></div>
+      </div>
+    </div>
+    <div id="bpCategory" class="bp-category" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span> 📝 Notizen</div>
+    <input type="text" id="bpNote" placeholder="Nach dem Sport, morgens, nach dem Essen...">
+    <label>Messarm</label>
+    <div class="toggle-group" id="armGroup">
+      <div class="toggle-item active" onclick="toggleArm(this, 'Links')">Links</div>
+      <div class="toggle-item" onclick="toggleArm(this, 'Rechts')">Rechts</div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="saveBP()">💾 Messung speichern</button>
+
+  <div style="margin-top: 20px">
+    <div class="section-title" style="font-size: 16px; margin-bottom: 14px;">Letzte Messungen</div>
+    <div id="bpHistoryList">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-text">Noch keine Messungen erfasst</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY TAB -->
+<div id="page-history" class="page">
+  <div class="section-title">Verlauf</div>
+  <div class="section-sub">Alle gespeicherten Einträge</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="statDays">0</div>
+      <div class="stat-label">Tage erfasst</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statWeeks">0</div>
+      <div class="stat-label">Wochen</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statBP">0</div>
+      <div class="stat-label">BP-Messungen</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAvgWater">0</div>
+      <div class="stat-label">⌀ Gläser/Tag</div>
+    </div>
+  </div>
+
+  <div id="weightHistory" style="margin-bottom:20px;"></div>
+
+  <div id="historyList"></div>
+
+  <button class="print-btn" onclick="printReport()">🖨️ Gesamtbericht drucken</button>
+  <button class="btn-secondary" onclick="confirmClear()" style="color: var(--red); border-color: var(--red); margin-top: 10px;">🗑️ Alle Daten löschen</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA MODEL
+// ============================================================
+const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const DAYS_FULL = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+const REFLECTION_QUESTIONS = [
+  'Ich habe auf meine Bedürfnisse geachtet.',
+  'Ich hatte genug Energie für alles, was passiert ist.',
+  'Ich habe mich ausgewogen ernährt.',
+  'Ich bin zufrieden mit dem, was ich geschafft habe.',
+  'Ich habe mein Bewegungsziel erreicht.',
+  'Ich habe gut geschlafen.',
+  'Ich war nicht selbstkritisch.',
+  'Ich habe ausreichend Wasser getrunken.'
+];
+
+let currentWeekOffset = 0;
+let selectedDayIdx = new Date().getDay();
+selectedDayIdx = selectedDayIdx === 0 ? 6 : selectedDayIdx - 1; // Mon=0
+
+let selectedMood = '';
+let selectedArm = 'Links';
+
+function getData() {
+  return JSON.parse(localStorage.getItem('ernaehrung_v2') || '{}');
+}
+
+function saveData(data) {
+  localStorage.setItem('ernaehrung_v2', JSON.stringify(data));
+}
+
+// ============================================================
+// DATE HELPERS
+// ============================================================
+function getMonday(offset = 0) {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const mon = new Date(d.setDate(diff + offset * 7));
+  mon.setHours(0, 0, 0, 0);
+  return mon;
+}
+
+function getWeekKey(offset = 0) {
+  const mon = getMonday(offset);
+  return mon.toISOString().split('T')[0];
+}
+
+function getDayKey(weekOffset, dayIdx) {
+  const mon = getMonday(weekOffset);
+  const d = new Date(mon);
+  d.setDate(d.getDate() + dayIdx);
+  return d.toISOString().split('T')[0];
+}
+
+function getKW(date) {
+  const d = new Date(date);
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initReflectionSliders();
+  initWaterGrid();
+  renderDaySelector();
+  updateWeekBadge();
+  loadDayData();
+  loadWaterData();
+  loadWeeklyData();
+  loadBPHistory();
+  renderHistory();
+
+  // Set today as default for BP
+  const now = new Date();
+  document.getElementById('bpDate').value = now.toISOString().split('T')[0];
+  document.getElementById('bpTime').value = now.toTimeString().slice(0, 5);
+
+  // Live BP category
+  ['bpSys', 'bpDia'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateBPCategory);
+  });
+});
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+// ============================================================
+// WEEK NAVIGATION
+// ============================================================
+function changeWeek(dir) {
+  currentWeekOffset += dir;
+  renderDaySelector();
+  updateWeekBadge();
+  loadDayData();
+  loadWaterData();
+  loadWeeklyData();
+}
+
+function updateWeekBadge() {
+  const mon = getMonday(currentWeekOffset);
+  const sun = new Date(mon);
+  sun.setDate(sun.getDate() + 6);
+  const kw = getKW(mon);
+  document.getElementById('weekBadge').textContent = `KW ${kw}`;
+  document.getElementById('weekRangeLabel').textContent =
+    `${mon.getDate()}. ${MONTHS[mon.getMonth()].slice(0,3)} – ${sun.getDate()}. ${MONTHS[sun.getMonth()].slice(0,3)}`;
+}
+
+// ============================================================
+// DAY SELECTOR
+// ============================================================
+function renderDaySelector() {
+  const data = getData();
+  const container = document.getElementById('daySelector');
+  container.innerHTML = '';
+  const mon = getMonday(currentWeekOffset);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon);
+    d.setDate(d.getDate() + i);
+    const key = d.toISOString().split('T')[0];
+    const hasData = data.diary && data.diary[key];
+
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i === selectedDayIdx ? ' active' : '') + (hasData ? ' has-data' : '');
+    btn.innerHTML = `<span>${DAYS[i]}</span><span class="day-num">${d.getDate()}</span>`;
+    btn.onclick = () => selectDay(i);
+    container.appendChild(btn);
+  }
+
+  updateDayTitle();
+}
+
+function selectDay(idx) {
+  selectedDayIdx = idx;
+  renderDaySelector();
+  loadDayData();
+  loadWaterData();
+}
+
+function updateDayTitle() {
+  const mon = getMonday(currentWeekOffset);
+  const d = new Date(mon);
+  d.setDate(d.getDate() + selectedDayIdx);
+  document.getElementById('dayTitle').textContent = DAYS_FULL[selectedDayIdx];
+  document.getElementById('daySubtitle').textContent = `${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('waterDayLabel').textContent = `${DAYS_FULL[selectedDayIdx]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+}
+
+// ============================================================
+// DIARY
+// ============================================================
+function loadDayData() {
+  updateDayTitle();
+  const data = getData();
+  const key = getDayKey(currentWeekOffset, selectedDayIdx);
+  const day = (data.diary && data.diary[key]) || {};
+
+  document.getElementById('breakfast').value = day.breakfast || '';
+  document.getElementById('lunch').value = day.lunch || '';
+  document.getElementById('dinner').value = day.dinner || '';
+  document.getElementById('snacks').value = day.snacks || '';
+  document.getElementById('notes').value = day.notes || '';
+
+  selectedMood = day.mood || '';
+  document.querySelectorAll('#moodGroup .toggle-item').forEach(el => {
+    el.classList.toggle('active', el.textContent === selectedMood);
+  });
+}
+
+function saveDiary() {
+  const data = getData();
+  const key = getDayKey(currentWeekOffset, selectedDayIdx);
+  if (!data.diary) data.diary = {};
+
+  data.diary[key] = {
+    breakfast: document.getElementById('breakfast').value,
+    lunch: document.getElementById('lunch').value,
+    dinner: document.getElementById('dinner').value,
+    snacks: document.getElementById('snacks').value,
+    notes: document.getElementById('notes').value,
+    mood: selectedMood,
+    saved: new Date().toISOString()
+  };
+
+  saveData(data);
+  renderDaySelector();
+  showToast('✅ Tag gespeichert!');
+}
+
+function toggleMood(el, mood) {
+  const group = document.getElementById('moodGroup');
+  group.querySelectorAll('.toggle-item').forEach(i => i.classList.remove('active'));
+  if (selectedMood === mood) {
+    selectedMood = '';
+  } else {
+    el.classList.add('active');
+    selectedMood = mood;
+  }
+}
+
+// ============================================================
+// WATER
+// ============================================================
+function initWaterGrid() {
+  const grid = document.getElementById('waterGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 8; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'water-btn';
+    btn.innerHTML = '💧';
+    btn.dataset.idx = i;
+    btn.onclick = () => toggleWater(i);
+    grid.appendChild(btn);
+  }
+}
+
+function loadWaterData() {
+  const data = getData();
+  const key = getDayKey(currentWeekOffset, selectedDayIdx);
+  const w = (data.water && data.water[key]) || {};
+  const glasses = w.glasses || 0;
+  const btns = document.querySelectorAll('.water-btn');
+  btns.forEach((b, i) => b.classList.toggle('filled', i < glasses));
+  updateWaterTotal(glasses);
+  document.getElementById('coffee').value = w.coffee || '';
+  document.getElementById('otherDrinks').value = w.otherDrinks || '';
+}
+
+function toggleWater(idx) {
+  const data = getData();
+  const key = getDayKey(currentWeekOffset, selectedDayIdx);
+  if (!data.water) data.water = {};
+  const current = (data.water[key] && data.water[key].glasses) || 0;
+  const newVal = idx < current ? idx : idx + 1;
+  if (!data.water[key]) data.water[key] = {};
+  data.water[key].glasses = newVal;
+  saveData(data);
+  loadWaterData();
+}
+
+function updateWaterTotal(glasses) {
+  const liters = (glasses * 0.25).toFixed(1).replace('.', ',');
+  document.getElementById('waterTotal').textContent = liters + ' L';
+}
+
+function saveWater() {
+  const data = getData();
+  const key = getDayKey(currentWeekOffset, selectedDayIdx);
+  if (!data.water) data.water = {};
+  if (!data.water[key]) data.water[key] = {};
+  data.water[key].coffee = document.getElementById('coffee').value;
+  data.water[key].otherDrinks = document.getElementById('otherDrinks').value;
+  saveData(data);
+  showToast('💧 Trinken gespeichert!');
+}
+
+// ============================================================
+// WEEKLY REFLECTION
+// ============================================================
+function initReflectionSliders() {
+  const container = document.getElementById('reflectionSliders');
+  container.innerHTML = '';
+  REFLECTION_QUESTIONS.forEach((q, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'slider-wrap';
+    wrap.innerHTML = `
+      <div class="slider-header">
+        <div class="slider-question">${q}</div>
+        <div class="slider-value" id="rv${i}">5</div>
+      </div>
+      <input type="range" min="1" max="10" value="5" id="rs${i}"
+        oninput="document.getElementById('rv${i}').textContent=this.value">
+    `;
+    container.appendChild(wrap);
+    if (i < REFLECTION_QUESTIONS.length - 1) {
+      const div = document.createElement('div');
+      div.className = 'divider';
+      container.appendChild(div);
+    }
+  });
+}
+
+function loadWeeklyData() {
+  const data = getData();
+  const key = getWeekKey(currentWeekOffset);
+  const w = (data.weekly && data.weekly[key]) || {};
+
+  document.getElementById('weight').value = w.weight || '';
+  document.getElementById('weeklyNote').value = w.note || '';
+
+  REFLECTION_QUESTIONS.forEach((_, i) => {
+    const val = w.reflection ? w.reflection[i] : 5;
+    const slider = document.getElementById('rs' + i);
+    const display = document.getElementById('rv' + i);
+    if (slider) { slider.value = val || 5; display.textContent = val || 5; }
+  });
+}
+
+function saveWeekly() {
+  const data = getData();
+  const key = getWeekKey(currentWeekOffset);
+  if (!data.weekly) data.weekly = {};
+
+  const reflection = {};
+  REFLECTION_QUESTIONS.forEach((_, i) => {
+    reflection[i] = parseInt(document.getElementById('rs' + i).value);
+  });
+
+  data.weekly[key] = {
+    weight: document.getElementById('weight').value,
+    reflection,
+    note: document.getElementById('weeklyNote').value,
+    saved: new Date().toISOString()
+  };
+
+  saveData(data);
+  showToast('⚖️ Woche gespeichert!');
+  renderHistory();
+}
+
+// ============================================================
+// BLOOD PRESSURE
+// ============================================================
+function toggleArm(el, arm) {
+  document.querySelectorAll('#armGroup .toggle-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  selectedArm = arm;
+}
+
+function updateBPCategory() {
+  const sys = parseInt(document.getElementById('bpSys').value);
+  const dia = parseInt(document.getElementById('bpDia').value);
+  const cat = document.getElementById('bpCategory');
+
+  if (!sys || !dia) { cat.style.display = 'none'; return; }
+  cat.style.display = 'block';
+
+  if (sys < 120 && dia < 80) {
+    cat.className = 'bp-category bp-cat-optimal';
+    cat.textContent = '✅ Optimal';
+  } else if (sys < 130 && dia < 85) {
+    cat.className = 'bp-category bp-cat-normal';
+    cat.textContent = '👍 Normal';
+  } else if (sys < 140 && dia < 90) {
+    cat.className = 'bp-category bp-cat-elevated';
+    cat.textContent = '⚠️ Hoch-Normal';
+  } else {
+    cat.className = 'bp-category bp-cat-high';
+    cat.textContent = '🚨 Erhöht – Arzt empfohlen';
+  }
+}
+
+function saveBP() {
+  const sys = document.getElementById('bpSys').value;
+  const dia = document.getElementById('bpDia').value;
+  const pulse = document.getElementById('bpPulse').value;
+
+  if (!sys || !dia || !pulse) {
+    showToast('⚠️ Bitte alle Werte eintragen!');
+    return;
+  }
+
+  const data = getData();
+  if (!data.bp) data.bp = [];
+
+  data.bp.unshift({
+    date: document.getElementById('bpDate').value,
+    time: document.getElementById('bpTime').value,
+    sys: parseInt(sys),
+    dia: parseInt(dia),
+    pulse: parseInt(pulse),
+    note: document.getElementById('bpNote').value,
+    arm: selectedArm
+  });
+
+  saveData(data);
+  loadBPHistory();
+  renderHistory();
+  showToast('❤️ Messung gespeichert!');
+
+  // Reset
+  document.getElementById('bpSys').value = '';
+  document.getElementById('bpDia').value = '';
+  document.getElementById('bpPulse').value = '';
+  document.getElementById('bpNote').value = '';
+  document.getElementById('bpCategory').style.display = 'none';
+}
+
+function loadBPHistory() {
+  const data = getData();
+  const list = document.getElementById('bpHistoryList');
+  const entries = (data.bp || []).slice(0, 10);
+
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Noch keine Messungen erfasst</div></div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const d = new Date(e.date);
+    const dateStr = `${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+    let cat = '';
+    if (e.sys < 120 && e.dia < 80) cat = '✅';
+    else if (e.sys < 130 && e.dia < 85) cat = '👍';
+    else if (e.sys < 140 && e.dia < 90) cat = '⚠️';
+    else cat = '🚨';
+
+    return `<div class="bp-history-item">
+      <div>
+        <div style="font-weight:600;font-size:13px;">${dateStr}</div>
+        <div style="font-size:11px;color:var(--text3)">${e.time} · ${e.arm}${e.note ? ' · ' + e.note : ''}</div>
+      </div>
+      <div class="bp-val bp-sys">${e.sys}</div>
+      <div class="bp-val bp-dia">${e.dia}</div>
+      <div class="bp-val bp-pul">${e.pulse} ${cat}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory() {
+  const data = getData();
+  const list = document.getElementById('historyList');
+
+  // Stats
+  const diaryDays = Object.keys(data.diary || {}).length;
+  const weeklyEntries = Object.keys(data.weekly || {}).length;
+  const bpCount = (data.bp || []).length;
+  const waterDays = Object.values(data.water || {});
+  const avgWater = waterDays.length
+    ? Math.round(waterDays.reduce((s, d) => s + (d.glasses || 0), 0) / waterDays.length)
+    : 0;
+
+  document.getElementById('statDays').textContent = diaryDays;
+  document.getElementById('statWeeks').textContent = weeklyEntries;
+  document.getElementById('statBP').textContent = bpCount;
+  document.getElementById('statAvgWater').textContent = avgWater;
+
+  // Weight history
+  const weightEl = document.getElementById('weightHistory');
+  const weights = Object.entries(data.weekly || {})
+    .filter(([, v]) => v.weight)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-8);
+
+  if (weights.length >= 2) {
+    weightEl.innerHTML = `<div class="card">
+      <div class="card-title"><span class="dot"></span>⚖️ Gewichtsverlauf</div>
+      ${weights.map(([key, v]) => {
+        const d = new Date(key);
+        const kw = getKW(d);
+        return `<div class="log-item"><span style="color:var(--text2)">KW ${kw}</span><span>${parseFloat(v.weight).toFixed(1)} kg</span></div>`;
+      }).join('')}
+    </div>`;
+  } else {
+    weightEl.innerHTML = '';
+  }
+
+  // Diary entries
+  const entries = Object.entries(data.diary || {}).sort(([a], [b]) => b.localeCompare(a)).slice(0, 20);
+
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">Noch keine Einträge</div></div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(([key, e]) => {
+    const waterKey = (data.water || {})[key];
+    const glasses = waterKey ? waterKey.glasses || 0 : 0;
+    const d = new Date(key);
+    const dayName = DAYS_FULL[d.getDay() === 0 ? 6 : d.getDay() - 1];
+    return `<div class="log-entry">
+      <div class="log-date">${dayName}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>
+      ${e.breakfast ? `<div class="log-item">🌅 Frühstück<span>${e.breakfast.slice(0, 40)}${e.breakfast.length > 40 ? '…' : ''}</span></div>` : ''}
+      ${e.lunch ? `<div class="log-item">☀️ Mittagessen<span>${e.lunch.slice(0, 40)}${e.lunch.length > 40 ? '…' : ''}</span></div>` : ''}
+      ${e.dinner ? `<div class="log-item">🌙 Abendessen<span>${e.dinner.slice(0, 40)}${e.dinner.length > 40 ? '…' : ''}</span></div>` : ''}
+      ${e.snacks ? `<div class="log-item">🍎 Snacks<span>${e.snacks.slice(0, 40)}${e.snacks.length > 40 ? '…' : ''}</span></div>` : ''}
+      ${glasses > 0 ? `<div class="log-item">💧 Wasser<span>${(glasses * 0.25).toFixed(1).replace('.', ',')} L</span></div>` : ''}
+      ${e.mood ? `<div class="log-item">Stimmung<span>${e.mood}</span></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// PRINT
+// ============================================================
+function printReport() {
+  window.print();
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function confirmClear() {
+  if (confirm('Wirklich ALLE Daten löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) {
+    localStorage.removeItem('ernaehrung_v2');
+    location.reload();
+  }
+}
+</script>
+</body>
+</html>
