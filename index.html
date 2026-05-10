@@ -615,7 +615,7 @@
   /* BP HISTORY */
   .bp-history-item {
     display: grid;
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: 1fr auto auto auto auto;
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
@@ -623,6 +623,34 @@
     border-radius: var(--radius-sm);
     margin-bottom: 6px;
     font-size: 13px;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .delete-btn:active { color: var(--red); background: rgba(224,112,112,0.15); }
+
+  .log-entry {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .log-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
   }
 
   .bp-val { font-weight: 700; font-size: 14px; }
@@ -759,11 +787,17 @@
     <div class="row-2">
       <div>
         <label>Datum</label>
-        <input type="date" id="bpDate">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="bpDate" style="flex:1;">
+          <button onclick="refreshBPDate()" title="Heutiges Datum" style="flex-shrink:0;width:38px;height:42px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
+        </div>
       </div>
       <div>
         <label>Uhrzeit</label>
-        <input type="time" id="bpTime">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="time" id="bpTime" style="flex:1;">
+          <button onclick="refreshBPTime()" title="Aktuelle Uhrzeit" style="flex-shrink:0;width:38px;height:42px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
+        </div>
       </div>
     </div>
   </div>
@@ -930,9 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
 
   // Set today as default for BP
-  const now = new Date();
-  document.getElementById('bpDate').value = now.toISOString().split('T')[0];
-  document.getElementById('bpTime').value = now.toTimeString().slice(0, 5);
+  refreshBPDateTime();
 
   // Live BP category
   ['bpSys', 'bpDia'].forEach(id => {
@@ -949,6 +981,21 @@ function switchTab(tab) {
   document.getElementById('page-' + tab).classList.add('active');
   event.target.classList.add('active');
   if (tab === 'history') renderHistory();
+  if (tab === 'bp') refreshBPDateTime();
+}
+
+function refreshBPDateTime() {
+  const now = new Date();
+  document.getElementById('bpDate').value = now.toISOString().split('T')[0];
+  document.getElementById('bpTime').value = now.toTimeString().slice(0, 5);
+}
+
+function refreshBPDate() {
+  document.getElementById('bpDate').value = new Date().toISOString().split('T')[0];
+}
+
+function refreshBPTime() {
+  document.getElementById('bpTime').value = new Date().toTimeString().slice(0, 5);
 }
 
 // ============================================================
@@ -1252,21 +1299,22 @@ function saveBP() {
   document.getElementById('bpPulse').value = '';
   document.getElementById('bpNote').value = '';
   document.getElementById('bpCategory').style.display = 'none';
+  refreshBPDateTime();
 }
 
 function loadBPHistory() {
   const data = getData();
   const list = document.getElementById('bpHistoryList');
-  const entries = (data.bp || []).slice(0, 10);
+  const entries = data.bp || [];
 
   if (!entries.length) {
     list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Noch keine Messungen erfasst</div></div>';
     return;
   }
 
-  list.innerHTML = entries.map(e => {
+  list.innerHTML = entries.map((e, idx) => {
     const d = new Date(e.date);
-    const dateStr = `${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+    const dateStr = `${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     let cat = '';
     if (e.sys < 120 && e.dia < 80) cat = '✅';
     else if (e.sys < 130 && e.dia < 85) cat = '👍';
@@ -1281,8 +1329,19 @@ function loadBPHistory() {
       <div class="bp-val bp-sys">${e.sys}</div>
       <div class="bp-val bp-dia">${e.dia}</div>
       <div class="bp-val bp-pul">${e.pulse} ${cat}</div>
+      <button class="delete-btn" onclick="deleteBP(${idx})" title="Löschen">🗑️</button>
     </div>`;
   }).join('');
+}
+
+function deleteBP(idx) {
+  if (!confirm('Diese Messung löschen?')) return;
+  const data = getData();
+  data.bp.splice(idx, 1);
+  saveData(data);
+  loadBPHistory();
+  renderHistory();
+  showToast('🗑️ Messung gelöscht');
 }
 
 // ============================================================
@@ -1340,7 +1399,10 @@ function renderHistory() {
     const d = new Date(key);
     const dayName = DAYS_FULL[d.getDay() === 0 ? 6 : d.getDay() - 1];
     return `<div class="log-entry">
-      <div class="log-date">${dayName}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>
+      <div class="log-entry-header">
+        <div class="log-date" style="margin-bottom:0">${dayName}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}</div>
+        <button class="delete-btn" onclick="deleteDiaryEntry('${key}')" title="Eintrag löschen">🗑️</button>
+      </div>
       ${e.breakfast ? `<div class="log-item">🌅 Frühstück<span>${e.breakfast.slice(0, 40)}${e.breakfast.length > 40 ? '…' : ''}</span></div>` : ''}
       ${e.lunch ? `<div class="log-item">☀️ Mittagessen<span>${e.lunch.slice(0, 40)}${e.lunch.length > 40 ? '…' : ''}</span></div>` : ''}
       ${e.dinner ? `<div class="log-item">🌙 Abendessen<span>${e.dinner.slice(0, 40)}${e.dinner.length > 40 ? '…' : ''}</span></div>` : ''}
@@ -1373,6 +1435,19 @@ function confirmClear() {
     localStorage.removeItem('ernaehrung_v2');
     location.reload();
   }
+}
+
+function deleteDiaryEntry(key) {
+  if (!confirm('Diesen Tageseintrag löschen?')) return;
+  const data = getData();
+  if (data.diary) delete data.diary[key];
+  if (data.water) delete data.water[key];
+  saveData(data);
+  renderDaySelector();
+  loadDayData();
+  loadWaterData();
+  renderHistory();
+  showToast('🗑️ Eintrag gelöscht');
 }
 </script>
 </body>
